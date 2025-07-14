@@ -14,7 +14,7 @@ const generateToken = (id: string) => {
 };
 
 export const registerUser = async (req: Request, res: Response) => {
-  const { username, email, password } = req.body;
+  const { name, email, password } = req.body;
 
   try {
     const userExists: IUser | null = await User.findOne({ email });
@@ -29,7 +29,7 @@ export const registerUser = async (req: Request, res: Response) => {
     const passwordHash = await bcrypt.hash(password, salt);
 
     const user: IUser = await User.create({
-      username,
+      name,
       email,
       password: passwordHash,
     });

@@ -1,4 +1,4 @@
-import mongoose, { Document, Schema } from 'mongoose';
+import mongoose, { Document, Schema } from "mongoose";
 
 export interface IUser extends Document {
   _id: mongoose.Types.ObjectId;
@@ -14,17 +14,20 @@ export interface IUser extends Document {
   isPremium: boolean;
 }
 
-const UserSchema: Schema = new Schema({
-  name: { type: String, required: true, trim: true },
-  email: { type: String, required: true, unique: true, trim: true },
-  mobile: {type: String, trim: true, default: ''},
-  gameName: { type: String, trim: true, default: '' },
-  profilePicture: { type: String, trim: true, default: '' },
-  rating: { type: String, trim: true, default: '' },
-  password: { type: String, required: true },
-  friends: [{ type: Schema.Types.ObjectId, ref: 'User' }],
-  friendRequests: [{ type: Schema.Types.ObjectId, ref: 'User' }],
-  isPremium: { type: Boolean, default: false },
-}, { timestamps: true });
+const UserSchema: Schema = new Schema(
+  {
+    name: { type: String, required: true, trim: true },
+    email: { type: String, required: true, unique: true, trim: true },
+    password: { type: String, required: true },
+    mobile: { type: String, trim: true, default: "" },
+    gameName: { type: String, trim: true, default: "" },
+    profilePicture: { type: String, trim: true, default: "" },
+    rating: { type: String, trim: true, default: "" },
+    friends: [{ type: Schema.Types.ObjectId, ref: "User" }],
+    friendRequests: [{ type: Schema.Types.ObjectId, ref: "User" }],
+    isPremium: { type: Boolean, default: false },
+  },
+  { timestamps: true }
+);
 
-export default mongoose.model<IUser>('User', UserSchema);
+export default mongoose.model<IUser>("User", UserSchema);

@@ -3,12 +3,12 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import User, { IUser } from "../models/User";
 
-const generateToken = (id: string) => {
+const generateToken = (user: IUser) => {
   const secret = process.env.JWT_SECRET;
   if (!secret) {
     throw new Error("JWT_SECRET is not defined");
   }
-  return jwt.sign({ id }, secret, {
+  return jwt.sign({ user }, secret, {
     expiresIn: "30d",
   });
 };
@@ -37,8 +37,8 @@ export const registerUser = async (req: Request, res: Response) => {
     if (user) {
       res.status(201).json({
         success: true,
-        user: user,
-        token: generateToken(user._id.toString()),
+        // user: user,
+        token: generateToken(user),
       });
     } else {
       res.status(400).json({ success: false, message: "Invalid user data" });
@@ -58,7 +58,7 @@ export const loginUser = async (req: Request, res: Response) => {
     if (user && (await bcrypt.compare(password, user.password))) {
       res.json({
         user: user,
-        token: generateToken(user._id.toString()),
+        token: generateToken(user),
       });
     } else {
       console.log("Invalid email or password");

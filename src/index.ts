@@ -755,12 +755,12 @@ const connections = new Set<any>();
 // In-memory store for online users { userId: { id: string, name: string, socketId: string } }
 const onlineUsers = new Map<
   string,
-  { id: string; name: string; socketId: string }
+  { _id: string; name: string; socketId: string }
 >();
 
 // Define a type for the socket that includes our custom user property
 interface SocketWithAuth extends Socket {
-  user?: { id: string; name: string };
+  user?: { _id: string; name: string };
 }
 
 // Socket.IO middleware for JWT authentication
@@ -771,10 +771,10 @@ io.use((socket: SocketWithAuth, next) => {
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET!) as {
-      id: string;
+      _id: string;
       name: string;
     };
-    socket.user = { id: decoded.id, name: decoded.name }; // Attach user info to the socket
+    socket.user = { _id: decoded._id, name: decoded.name }; // Attach user info to the socket
     next();
   } catch (err) {
     console.error("Socket authentication error:", err);
@@ -788,12 +788,12 @@ io.on("connection", (socket: SocketWithAuth) => {
 
   // User is authenticated via middleware, add them to online list
   if (socket.user) {
-    const { id, name } = socket.user;
-    onlineUsers.set(id, { id, name, socketId: socket.id });
-    console.log(`User ${id} (${name}) is online with socket ${socket.id}`);
+    const { _id, name } = socket.user;
+    onlineUsers.set(_id, { _id, name, socketId: socket.id });
+    console.log(`User ${_id} (${name}) is online with socket ${socket.id}`);
     // Broadcast updated online users list to all clients (without socketId)
     const usersForClient = Array.from(onlineUsers.values()).map(
-      ({ id, name }) => ({ id, name })
+      ({ _id, name }) => ({ _id, name })
     );
     io.emit("online_users_updated", usersForClient);
   }
@@ -803,13 +803,13 @@ io.on("connection", (socket: SocketWithAuth) => {
     console.log(`User disconnected: ${socket.id}`);
     // On disconnect, remove the user from the online list if they were authenticated
     if (socket.user) {
-      const { id, name } = socket.user;
-      if (onlineUsers.has(id)) {
-        onlineUsers.delete(id);
-        console.log(`User ${id} (${name}) went offline`);
+      const { _id, name } = socket.user;
+      if (onlineUsers.has(_id)) {
+        onlineUsers.delete(_id);
+        console.log(`User ${_id} (${name}) went offline`);
         // Broadcast updated online users list to all clients (without socketId)
         const usersForClient = Array.from(onlineUsers.values()).map(
-          ({ id, name }) => ({ id, name })
+          ({ _id, name }) => ({ _id, name })
         );
         io.emit("online_users_updated", usersForClient);
       }
@@ -823,7 +823,7 @@ io.on("connection", (socket: SocketWithAuth) => {
       // Create a new game with pending status
       // For now, challenger is white, challenged is black. Can be randomized later.
       const game = await Game.create({
-        whitePlayer: socket.user.id,
+        whitePlayer: socket.user._id,
         blackPlayer: challengedUserId,
       });
 
@@ -841,7 +841,7 @@ io.on("connection", (socket: SocketWithAuth) => {
 
       io.to(challengedSocket.socketId).emit("new_challenge", {
         gameId: game._id,
-        challenger: { id: socket.user.id, name: socket.user.name },
+        challenger: { _id: socket.user._id, name: socket.user.name },
       });
 
       console.log(
@@ -986,33 +986,28 @@ io.on("connection", (socket: SocketWithAuth) => {
     socket.emit("matchmaking_cancelled", { message: "Search cancelled." });
   });
 
-  // Remove user from all matchmaking pools on disconnect
   socket.on("disconnect", () => {
     if (socket.user) {
-      removeUserFromAllPools(socket.user.id);
+      removeUserFromAllPools(socket.user._id);
     }
   });
 
   socket.on("make_move", async ({ gameId, move }) => {
     if (!socket.user) return;
-
     try {
       const game = await Game.findById(gameId);
       if (!game || game.status !== "active") {
         // Game not found or not active
         return;
       }
-
       // Validate that it's the player's turn
       const isPlayerTurn =
-        (game.turn === "w" && game.whitePlayer.equals(socket.user.id)) ||
-        (game.turn === "b" && game.blackPlayer.equals(socket.user.id));
-
+        (game.turn === "w" && game.whitePlayer.equals(socket.user._id)) ||
+        (game.turn === "b" && game.blackPlayer.equals(socket.user._id));
       if (!isPlayerTurn) {
         socket.emit("invalid_move", { message: "Not your turn." });
         return;
       }
-
       const chess = new Chess(game.fen);
       const result = chess.move(move);
 

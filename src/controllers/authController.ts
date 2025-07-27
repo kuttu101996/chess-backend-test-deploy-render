@@ -37,8 +37,8 @@ export const registerUser = async (req: Request, res: Response) => {
     if (user) {
       res.status(201).json({
         success: true,
-        // user: user,
-        token: generateToken(user),
+        user: user,
+        token: generateToken(user.toObject()),
       });
     } else {
       res.status(400).json({ success: false, message: "Invalid user data" });
@@ -58,7 +58,7 @@ export const loginUser = async (req: Request, res: Response) => {
     if (user && (await bcrypt.compare(password, user.password))) {
       res.json({
         user: user,
-        token: generateToken(user),
+        token: generateToken(user.toObject()),
       });
     } else {
       console.log("Invalid email or password");
